@@ -1,15 +1,20 @@
 package ifsc.melhorelli.controller;
 
-import ifsc.melhorelli.model.*;
-import ifsc.melhorelli.proxy.NetGames;
-import ifsc.melhorelli.service.Tabuleiro;
+import ifsc.melhorelli.model.Jogador;
+import ifsc.melhorelli.model.Posicao;
+import ifsc.melhorelli.model.Faixa;
+import ifsc.melhorelli.model.TipoJogada;
+import ifsc.melhorelli.model.JogadaMorelli;
+import ifsc.melhorelli.service.TabuleiroService;
+import ifsc.melhorelli.service.NetworkService;
+import ifsc.melhorelli.service.GameEventHandler;
 import ifsc.melhorelli.view.TelaJogador;
 
 import javax.swing.*;
 
-public class AtorJogador {
-    protected NetGames netGames = new NetGames(this);
-    protected Tabuleiro tabuleiro = new Tabuleiro(this);
+public class AtorJogador implements GameEventHandler {
+    protected NetworkService networkService;
+    protected TabuleiroService tabuleiroService;
     protected TelaJogador tela = new TelaJogador(this);
     protected boolean conectado;
     protected Jogador jogador;
@@ -17,6 +22,8 @@ public class AtorJogador {
     protected Faixa[] tabuleiroAtualizado;
 
     public AtorJogador() {
+        this.networkService = new NetworkService(this);
+        this.tabuleiroService = new TabuleiroService();
         this.tela.setVisible(true);
         this.conectado = false;
         this.jogador = null;
@@ -36,7 +43,7 @@ public class AtorJogador {
         if (!this.conectado) {
             String ip = this.solicitaIpServidor();
             String nomeJogador = this.solicitaNomeJogador();
-            this.conectado = this.netGames.conectar(ip, nomeJogador);
+            this.conectado = this.networkService.conectar(ip, nomeJogador);
         } else {
             this.notificarConectado();
         }
@@ -62,8 +69,8 @@ public class AtorJogador {
 
     public void desconectar() {
         if (this.conectado) {
-            this.tabuleiro.setPartidaEmAndamento(false);
-            this.conectado = this.netGames.desconectar();
+            this.tabuleiroService.setPartidaEmAndamento(false);
+            this.conectado = this.networkService.desconectar();
         } else {
             this.notificarDesconectado();
         }
@@ -72,36 +79,37 @@ public class AtorJogador {
     }
 
     public void iniciarPartida() {
-        if (this.tabuleiro.isPartidaEmAndamento()) {
+        if (this.tabuleiroService.isPartidaEmAndamento()) {
             this.notificarPartidaEmAndamento();
             if (this.confirmarReiniciarPartida()) {
-                this.netGames.reiniciarPartida();
+                this.networkService.reiniciarPartida();
             }
         } else {
-            this.tabuleiro.setPartidaEmAndamento(true);
-            this.netGames.iniciarPartida();
+            this.tabuleiroService.setPartidaEmAndamento(true);
+            this.networkService.iniciarPartida();
         }
 
     }
 
+    @Override
     public void receberSolicitacaoInicio(int ordem) {
         if (ordem == 1) {
-            this.tela.setPainel("Nome: " + this.netGames.getNomeAdversario(1) + "\n");
-            this.tela.setPainel("Adversario: " + this.netGames.getNomeAdversario(2) + "\n\n");
+            this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(1) + "\n");
+            this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(2) + "\n\n");
             this.tela.setPainel("Você joga com as peças brancas.\n");
             this.tela.setPainel("Seu adversário começa jogando. Aguarde a sua vez!");
             this.setDaVez(true);
         } else {
-            this.tela.setPainel("Nome: " + this.netGames.getNomeAdversario(2) + "\n");
-            this.tela.setPainel("Adversario: " + this.netGames.getNomeAdversario(1) + "\n\n");
+            this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(2) + "\n");
+            this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(1) + "\n\n");
             this.tela.setPainel("Você joga com as peças pretas.\n");
             this.tela.setPainel("Você começa jogando.");
             this.setDaVez(false);
         }
 
-        String nomeJogador1 = this.netGames.getNomeAdversario(1);
-        String nomeJogador2 = this.netGames.getNomeAdversario(2);
-        this.tabuleiroAtualizado = this.tabuleiro.iniciarPartida(ordem, nomeJogador1, nomeJogador2);
+        String nomeJogador1 = this.networkService.getNomeAdversario(1);
+        String nomeJogador2 = this.networkService.getNomeAdversario(2);
+        this.tabuleiroAtualizado = this.tabuleiroService.iniciarPartida(ordem, nomeJogador1, nomeJogador2);
         if (ordem == 1) {
             this.enviarJogada(TipoJogada.ATUALIZARTABULEIRO);
             this.tela.atualizaTabuleiro(this.tabuleiroAtualizado);
@@ -109,8 +117,9 @@ public class AtorJogador {
 
     }
 
+    @Override
     public void finalizarPartidaEmpate() {
-        this.tabuleiro.setPartidaEmAndamento(false);
+        this.tabuleiroService.setPartidaEmAndamento(false);
         this.exibeMensagemEmpate();
     }
 
@@ -131,15 +140,15 @@ public class AtorJogador {
     }
 
     public String ajuda() {
-        return this.tabuleiro.getAjuda();
+        return this.tabuleiroService.getAjuda();
     }
 
     public void movimentarPeca(Posicao origem, Posicao destino) {
         try {
-            if (this.daVez && this.tabuleiro.isPartidaEmAndamento() && origem.getCor() == this.jogador.getCor() && this.tabuleiro.calcularMovimento(origem, destino)) {
-                this.tabuleiro.calcularCaptura(destino);
-                this.tabuleiro.calcularTomadaTrono(destino);
-                this.tabuleiroAtualizado = this.tabuleiro.getFaixasTabuleiro();
+            if (this.daVez && this.tabuleiroService.isPartidaEmAndamento() && origem.getCor() == this.jogador.getCor() && this.tabuleiroService.calcularMovimento(origem, destino)) {
+                this.tabuleiroService.calcularCaptura(destino);
+                this.tabuleiroService.calcularTomadaTrono(destino);
+                this.tabuleiroAtualizado = this.tabuleiroService.getFaixasTabuleiro();
                 this.enviarJogada(TipoJogada.ATUALIZARTABULEIRO);
                 this.tela.atualizaTabuleiro(this.tabuleiroAtualizado);
 
@@ -151,7 +160,7 @@ public class AtorJogador {
     }
 
     public void enviarJogada(TipoJogada tipoJogada) {
-        if (this.daVez && this.tabuleiro.isPartidaEmAndamento()) {
+        if (this.daVez && this.tabuleiroService.isPartidaEmAndamento()) {
             this.setDaVez(false);
             this.tela.setPainel("Aguarde seu adversário jogar");
             if (null != tipoJogada) {
@@ -159,36 +168,37 @@ public class AtorJogador {
                 switch (tipoJogada) {
                     case REALIZARACORDO:
                         jogada = new JogadaMorelli(TipoJogada.REALIZARACORDO);
-                        this.netGames.enviarJogada(jogada);
+                        this.networkService.enviarJogada(jogada);
                         break;
                     case ACORDOACEITO:
                         jogada = new JogadaMorelli(TipoJogada.ACORDOACEITO);
-                        this.netGames.enviarJogada(jogada);
-                        this.netGames.finalizarPartida();
+                        this.networkService.enviarJogada(jogada);
+                        this.networkService.finalizarPartida();
                         break;
                     case ACORDONEGADO:
                         jogada = new JogadaMorelli(TipoJogada.ACORDONEGADO);
-                        this.netGames.enviarJogada(jogada);
+                        this.networkService.enviarJogada(jogada);
                         break;
                     case ABANDONARPARTIDA:
                         jogada = new JogadaMorelli(TipoJogada.ABANDONARPARTIDA);
-                        this.netGames.enviarJogada(jogada);
+                        this.networkService.enviarJogada(jogada);
                         break;
                     case ATUALIZARTABULEIRO:
                         jogada = new JogadaMorelli(TipoJogada.ATUALIZARTABULEIRO, this.tabuleiroAtualizado);
-                        this.netGames.enviarJogada(jogada);
+                        this.networkService.enviarJogada(jogada);
                         break;
                     default:
                         new JogadaMorelli(TipoJogada.ENCERRAMENTO);
                         String msg = "A partida foi encerrada!";
                         this.notificar(msg);
-                        this.netGames.finalizarPartida();
+                        this.networkService.finalizarPartida();
                 }
             }
         }
 
     }
 
+    @Override
     public void receberJogada(JogadaMorelli jogada) {
         this.setDaVez(true);
         this.tela.setPainel("Sua vez de jogar!");
@@ -205,9 +215,9 @@ public class AtorJogador {
                     this.exibeMensagemAcordoNegado();
                     break;
                 case ABANDONARPARTIDA:
-                    this.tabuleiro.setPartidaEmAndamento(false);
-                    this.netGames.finalizarPartida();
-                    String msg = this.netGames.getNomeJogador() + " abandonou a partida. Você é o vencedor!";
+                    this.tabuleiroService.setPartidaEmAndamento(false);
+                    this.networkService.finalizarPartida();
+                    String msg = this.networkService.getNomeJogador() + " abandonou a partida. Você é o vencedor!";
                     this.notificar(msg);
                     break;
                 case ATUALIZARTABULEIRO:
@@ -221,8 +231,8 @@ public class AtorJogador {
     }
 
     public void abandonarPartida() {
-        if (this.tabuleiro.isPartidaEmAndamento()) {
-            this.tabuleiro.setPartidaEmAndamento(false);
+        if (this.tabuleiroService.isPartidaEmAndamento()) {
+            this.tabuleiroService.setPartidaEmAndamento(false);
             this.enviarJogada(TipoJogada.ABANDONARPARTIDA);
             JOptionPane.showMessageDialog(this.tela, "Você abandonou a partida e perdeu!");
         }
@@ -231,7 +241,7 @@ public class AtorJogador {
 
     public void atualizaTabuleiro(Faixa[] tabuleiroAtualizado) {
         this.tabuleiroAtualizado = tabuleiroAtualizado;
-        this.tabuleiro.atualizarTabuleiro(tabuleiroAtualizado);
+        this.tabuleiroService.atualizarTabuleiro(tabuleiroAtualizado);
         this.tela.atualizaTabuleiro(tabuleiroAtualizado);
     }
 
@@ -261,8 +271,9 @@ public class AtorJogador {
         this.tela.setPainel("O acordo foi aceito e a partida terminou empatada!");
     }
 
+    @Override
     public void informaPartidaEncerrada() {
-        this.tabuleiro.finalizaPartida();
+        this.tabuleiroService.finalizaPartida();
     }
 
     public void exibeMensagemAcordoNegado() {

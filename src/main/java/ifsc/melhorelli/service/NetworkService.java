@@ -1,24 +1,22 @@
-package ifsc.melhorelli.proxy;
-
+package ifsc.melhorelli.service;
 
 import br.ufsc.inf.leobr.cliente.Jogada;
 import br.ufsc.inf.leobr.cliente.OuvidorProxy;
 import br.ufsc.inf.leobr.cliente.Proxy;
-import ifsc.melhorelli.controller.AtorJogador;
 import ifsc.melhorelli.model.JogadaMorelli;
 
-public class NetGames implements OuvidorProxy {
+/**
+ * Serviço responsável pela comunicação de rede
+ * Removida dependência circular com AtorJogador
+ */
+public class NetworkService implements OuvidorProxy {
 
-    protected transient AtorJogador atorJogador;
+    protected transient GameEventHandler gameEventHandler;
     protected transient Proxy proxy;
 
-    public NetGames(AtorJogador atorJogador) {
-
-        super();
-
-        this.atorJogador = atorJogador;
+    public NetworkService(GameEventHandler gameEventHandler) {
+        this.gameEventHandler = gameEventHandler;
         this.proxy = Proxy.getInstance();
-
         this.proxy.addOuvinte(this);
     }
 
@@ -27,7 +25,7 @@ public class NetGames implements OuvidorProxy {
             this.proxy.conectar(ip, nomeJogador);
             return true;
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
         return false;
     }
@@ -37,7 +35,7 @@ public class NetGames implements OuvidorProxy {
             this.proxy.desconectar();
             return false;
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
         return true;
     }
@@ -46,20 +44,20 @@ public class NetGames implements OuvidorProxy {
         try {
             this.proxy.iniciarPartida(2);
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
     }
 
     @Override
     public void iniciarNovaPartida(Integer posicao) {
-        atorJogador.receberSolicitacaoInicio(posicao);
+        gameEventHandler.receberSolicitacaoInicio(posicao);
     }
 
     public void enviarJogada(JogadaMorelli jogada) {
         try {
             Proxy.getInstance().enviaJogada(jogada);
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
     }
 
@@ -67,7 +65,7 @@ public class NetGames implements OuvidorProxy {
         try {
             proxy.reiniciarPartida();
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
     }
 
@@ -75,13 +73,13 @@ public class NetGames implements OuvidorProxy {
         try {
             proxy.finalizarPartida();
         } catch (Exception e) {
-            atorJogador.notificar(e.getMessage());
+            gameEventHandler.notificar(e.getMessage());
         }
     }
 
     @Override
     public void receberJogada(Jogada jogada) {
-        atorJogador.receberJogada((JogadaMorelli) jogada);
+        gameEventHandler.receberJogada((JogadaMorelli) jogada);
     }
 
     public String getNomeJogador() {
@@ -94,28 +92,22 @@ public class NetGames implements OuvidorProxy {
 
     @Override
     public void finalizarPartidaComErro(String msg) {
-        atorJogador.notificar(msg);
+        gameEventHandler.notificar(msg);
     }
 
     @Override
     public void tratarConexaoPerdida() {
         String msg = "A conexão com o servidor foi perdida. Partida encerrada";
-        atorJogador.notificar(msg);
+        gameEventHandler.notificar(msg);
     }
 
     @Override
     public void tratarPartidaNaoIniciada(String message) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        gameEventHandler.notificar(message);
     }
 
     @Override
     public void receberMensagem(String msg) {
-        atorJogador.notificar(msg);
+        gameEventHandler.notificar(msg);
     }
-
-    public void receberJogada() {
-        receberJogada((Jogada) null);
-    }
-
-
 }

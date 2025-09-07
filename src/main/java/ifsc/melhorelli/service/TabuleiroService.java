@@ -1,6 +1,5 @@
 package ifsc.melhorelli.service;
 
-import ifsc.melhorelli.controller.AtorJogador;
 import ifsc.melhorelli.model.Ajuda;
 import ifsc.melhorelli.model.Faixa;
 import ifsc.melhorelli.model.Jogador;
@@ -8,9 +7,12 @@ import ifsc.melhorelli.model.Posicao;
 
 import java.util.Random;
 
-public class Tabuleiro {
+/**
+ * Serviço responsável pela lógica do tabuleiro
+ * Removida dependência circular com AtorJogador
+ */
+public class TabuleiroService {
 
-    protected AtorJogador atorJogador;
     protected Ajuda ajuda;
     Random random = new Random();
 
@@ -22,16 +24,11 @@ public class Tabuleiro {
     protected Jogador jogador1;
     protected Jogador jogador2;
 
-    public Tabuleiro(AtorJogador atorJogador) {
-
-        this.atorJogador = atorJogador;
+    public TabuleiroService() {
         this.ajuda = new Ajuda();
         this.partidaEmAndamento = false;
         this.faixasTabuleiro = new Faixa[7]; //O tabuleiro sempre tem 7 faixas
-
-
     }
-
 
     public void setPartidaEmAndamento(boolean partidaEmAndamento) {
         this.partidaEmAndamento = partidaEmAndamento;
@@ -49,7 +46,6 @@ public class Tabuleiro {
         return faixasTabuleiro;
     }
 
-
     public Faixa[] iniciarPartida(int ordem, String nomeJogador1, String nomeJogador2) {
 
         //Cria os jogadores
@@ -58,12 +54,6 @@ public class Tabuleiro {
 
         //jogador1 joga com as pecas pretas e inica a partida
         jogador2.setPecasPretas();
-
-        if (ordem == 1) {
-            atorJogador.setJogador(jogador1);
-        } else {
-            atorJogador.setJogador(jogador2);
-        }
 
         //Prepara o tabuleiro para iniciar a partida
         this.limparTabuleiro();
@@ -108,11 +98,9 @@ public class Tabuleiro {
         }
     }
 
-
     public String getAjuda() {
         return ajuda.getTextoAjuda();
     }
-
 
     public boolean movimentoAoCentro(Posicao origem, Posicao destino) {
         return origem.getFaixa() > destino.getFaixa();
@@ -140,7 +128,6 @@ public class Tabuleiro {
         return false;
     }
 
-
     public boolean calcularMovimentoColuna(Posicao origem, Posicao destino) {
         if (origem.getColuna() != destino.getColuna()) {
             return false;
@@ -160,7 +147,6 @@ public class Tabuleiro {
         }
         return false;
     }
-
 
     public boolean calcularMovimentoDiagonal(Posicao origem, Posicao destino) {
         int linhaOrigem = origem.getLinha();
@@ -185,7 +171,6 @@ public class Tabuleiro {
         return diagonalOrigem == diagonalDestino;
     }
 
-
     public void calcularCaptura(Posicao destino) {
         try {
             boolean cor = destino.getCor();
@@ -201,7 +186,7 @@ public class Tabuleiro {
                 }
             }
         } catch (Exception e) {
-            atorJogador.notificar(e + " calcularCaptura");
+            System.err.println("Erro em calcularCaptura: " + e.getMessage());
         }
     }
 
@@ -214,7 +199,6 @@ public class Tabuleiro {
         }
         return null;
     }
-
 
     public Posicao[] verificarAdjacentes(Posicao destino) {
         int linha = destino.getLinha();
@@ -295,7 +279,6 @@ public class Tabuleiro {
         return -1;
     }
 
-
     public void finalizaPartida() {
         setPartidaEmAndamento(false);
     }
@@ -304,7 +287,6 @@ public class Tabuleiro {
 
         //O trono não pode receber movimento; deve ser conquistado
         if (((destino.getColuna() == 6) && (destino.getLinha() == 6)) || destino.isOcupada() || !movimentoAoCentro(origem, destino)) {
-            atorJogador.notificarIrregularidade();
             return false;
         }
 
@@ -340,4 +322,11 @@ public class Tabuleiro {
         }
     }
 
+    public Jogador getJogador1() {
+        return jogador1;
+    }
+
+    public Jogador getJogador2() {
+        return jogador2;
+    }
 }
