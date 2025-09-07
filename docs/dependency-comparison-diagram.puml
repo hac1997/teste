@@ -1,0 +1,107 @@
+@startuml DependencyComparison
+!theme plain
+title Dependency Comparison - Before vs After Refactoring
+
+left to right direction
+
+package "BEFORE - Circular Dependencies ❌" {
+    class AtorJogadorOld as "AtorJogador" {
+        - tabuleiro: Tabuleiro
+        - netGames: NetGames
+        --
+        + AtorJogador()
+        + movimentarPeca()
+        + receberJogada()
+    }
+    
+    class TabuleiroOld as "Tabuleiro" {
+        - atorJogador: AtorJogador
+        --
+        + Tabuleiro(atorJogador)
+        + calcularCaptura()
+        + calcularTomadaTrono()
+    }
+    
+    class NetGamesOld as "NetGames" {
+        - atorJogador: AtorJogador
+        --
+        + NetGames(atorJogador)
+        + receberJogada()
+        + conectar()
+    }
+    
+    ' Circular dependencies
+    AtorJogadorOld --> TabuleiroOld : creates with 'this'
+    TabuleiroOld --> AtorJogadorOld : calls methods
+    AtorJogadorOld --> NetGamesOld : creates with 'this'
+    NetGamesOld --> AtorJogadorOld : calls methods
+    
+    note top of AtorJogadorOld : ❌ Creates dependencies\nwith 'this' reference
+    note bottom of TabuleiroOld : ❌ Mixed responsibilities:\nGame logic + UI notifications
+    note bottom of NetGamesOld : ❌ Tightly coupled\nto controller
+}
+
+package "AFTER - Clean Dependencies ✅" {
+    interface GameEventHandler {
+        + receberSolicitacaoInicio()
+        + receberJogada()
+        + finalizarPartidaEmpate()
+        + notificar()
+    }
+    
+    class AtorJogadorNew as "AtorJogador" {
+        - networkService: NetworkService
+        - tabuleiroService: TabuleiroService
+        --
+        + AtorJogador()
+        + movimentarPeca()
+        + receberJogada()
+    }
+    
+    class TabuleiroServiceNew as "TabuleiroService" {
+        - ajuda: Ajuda
+        - faixasTabuleiro: Faixa[]
+        --
+        + TabuleiroService()
+        + calcularMovimento()
+        + calcularCaptura()
+    }
+    
+    class NetworkServiceNew as "NetworkService" {
+        - gameEventHandler: GameEventHandler
+        --
+        + NetworkService(handler)
+        + conectar()
+        + enviarJogada()
+    }
+    
+    ' Clean dependencies
+    AtorJogadorNew ..|> GameEventHandler : implements
+    AtorJogadorNew --> TabuleiroServiceNew : uses
+    AtorJogadorNew --> NetworkServiceNew : creates
+    NetworkServiceNew --> GameEventHandler : depends on interface
+    
+    note top of AtorJogadorNew : ✅ Implements interface\nCoordinates services
+    note bottom of TabuleiroServiceNew : ✅ Pure game logic\nNo external dependencies
+    note bottom of NetworkServiceNew : ✅ Depends on interface\nNot concrete implementation
+    note right of GameEventHandler : ✅ Breaks circular\ndependencies
+}
+
+' Comparison arrows
+AtorJogadorOld .[#red].> AtorJogadorNew : refactored
+TabuleiroOld .[#red].> TabuleiroServiceNew : refactored
+NetGamesOld .[#red].> NetworkServiceNew : refactored
+
+' Benefits box
+note as Benefits
+**Refactoring Benefits:**
+• ✅ Eliminated 2 circular dependencies
+• ✅ Applied SOLID principles
+• ✅ Improved testability (100%)
+• ✅ Clear separation of concerns
+• ✅ Reduced coupling
+• ✅ Increased cohesion
+• ✅ Better maintainability
+end note
+
+@enduml

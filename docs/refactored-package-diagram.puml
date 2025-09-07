@@ -1,0 +1,94 @@
+@startuml RefactoredPackageDiagram
+!theme plain
+title Refactored Package Diagram - Clean Dependencies
+
+package "ifsc.melhorelli" {
+    package "controller" {
+        class AtorJogador <<Controller>>
+        note top of AtorJogador : Coordinates between\nservices and UI
+    }
+    
+    package "service" {
+        interface GameEventHandler <<Interface>>
+        class TabuleiroService <<Service>>
+        class NetworkService <<Service>>
+        
+        note top of GameEventHandler : Breaks circular\ndependencies
+        note bottom of TabuleiroService : Pure game logic\nNo dependencies
+        note bottom of NetworkService : Network communication\nDepends on interface
+    }
+    
+    package "model" {
+        class Jogador <<Entity>>
+        class Posicao <<Entity>>
+        class Faixa <<Entity>>
+        class JogadaMorelli <<DTO>>
+        class Ajuda <<Value Object>>
+        enum Cor <<Enum>>
+        enum TipoJogada <<Enum>>
+    }
+    
+    package "view" {
+        class TelaJogador <<View>>
+    }
+}
+
+package "br.ufsc.inf.leobr.cliente" <<Framework>> {
+    interface Jogada
+    interface ClienteReceptor
+    interface OuvidorProxy
+    class Cliente
+    class Proxy
+    abstract EstadoProxy
+}
+
+package "br.ufsc.inf.leobr.servidor" <<Framework>> {
+    class Server
+    class ServerHandler
+    class Jogo
+    class Partida
+}
+
+' Clean Dependencies (No Circular References)
+controller ..> service : uses
+controller ..> view : controls
+controller ..> model : manages
+
+service ..> model : uses
+service ..> br.ufsc.inf.leobr.cliente : integrates
+
+model ..> br.ufsc.inf.leobr.cliente : implements
+
+br.ufsc.inf.leobr.cliente ..> br.ufsc.inf.leobr.servidor : communicates
+
+' Dependency Rules
+note as DependencyRules
+**Clean Architecture Dependency Rules:**
+✅ Controller → Service (allowed)
+✅ Service → Model (allowed)
+✅ Service → Framework (allowed)
+❌ Service → Controller (prevented by interface)
+❌ Model → Service (not needed)
+❌ Framework → Application (framework agnostic)
+
+**Key Improvements:**
+• Eliminated circular dependencies
+• Clear layered architecture
+• Dependency inversion via interfaces
+• Single responsibility per package
+end note
+
+' Color coding for dependency direction
+controller -[#green]-> service : ✅ Downward
+service -[#green]-> model : ✅ Downward
+service -[#blue]-> br.ufsc.inf.leobr.cliente : ✅ Framework integration
+
+' Legend
+legend right
+    |Color| Direction | Status |
+    |<#green>| Downward | ✅ Clean |
+    |<#blue>| Framework | ✅ Integration |
+    |<#red>| Upward | ❌ Prevented |
+endlegend
+
+@enduml

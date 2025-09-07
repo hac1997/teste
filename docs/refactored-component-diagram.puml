@@ -1,0 +1,116 @@
+@startuml RefactoredComponentDiagram
+!theme plain
+title Refactored Component Diagram - Clean Architecture (After Dependency Resolution)
+
+package "Client Side - Clean Architecture" {
+    
+    package "Presentation Layer" {
+        component [TelaJogador] {
+            portin " " as ui_in
+            portout " " as ui_out
+        }
+    }
+    
+    package "Controller Layer" {
+        component [AtorJogador] {
+            portin " " as controller_in
+            portout " " as controller_out
+            portout " " as controller_to_services
+        }
+        
+        interface "GameEventHandler" as IGameEventHandler {
+            portout " " as handler_out
+        }
+    }
+    
+    package "Service Layer" {
+        component [TabuleiroService] {
+            portin " " as tabuleiro_in
+            note bottom : Pure game logic\nNo external dependencies
+        }
+        
+        component [NetworkService] {
+            portin " " as network_in
+            portout " " as network_out
+            note bottom : Network communication\nDepends only on GameEventHandler
+        }
+    }
+    
+    package "Model Layer" {
+        component [Game Models] {
+            [Jogador]
+            [Posicao]
+            [Faixa]
+            [JogadaMorelli]
+            [Ajuda]
+            [Enums]
+        }
+    }
+    
+    package "Framework Layer" {
+        component [Network Framework] {
+            [Proxy]
+            [Cliente]
+            [EstadoProxy]
+        }
+    }
+}
+
+package "Server Side" {
+    component [Server Framework] {
+        [Server]
+        [ServerHandler]
+    }
+    
+    component [Game Logic] {
+        [Jogo]
+        [Partida]
+    }
+}
+
+cloud "Network" {
+    [TCP/IP Connection]
+}
+
+' Clean Architecture Relationships (No Circular Dependencies)
+ui_out --> controller_in : user interactions
+controller_out --> ui_in : UI updates
+
+controller_to_services --> tabuleiro_in : game operations
+controller_to_services --> network_in : network operations
+
+[AtorJogador] ..|> IGameEventHandler : implements
+network_out --> handler_out : events via interface
+
+[TabuleiroService] --> [Game Models] : uses models
+[NetworkService] --> [Network Framework] : uses framework
+
+[Network Framework] --> [TCP/IP Connection] : network communication
+[TCP/IP Connection] --> [Server Framework] : server connection
+[Server Framework] --> [Game Logic] : game management
+
+' Dependency Direction Indicators
+note as N1
+**Dependency Flow (Clean Architecture):**
+Presentation → Controller → Services → Models
+• No upward dependencies
+• Interfaces break circular dependencies
+• Services are independent and testable
+end note
+
+note as N2
+**Key Architectural Improvements:**
+✅ Eliminated circular dependencies
+✅ Clear separation of concerns
+✅ Dependency inversion principle
+✅ Single responsibility principle
+✅ Improved testability and maintainability
+end note
+
+' Color coding for clarity
+ui_in -[#blue]-> controller_in
+controller_to_services -[#green]-> tabuleiro_in
+controller_to_services -[#green]-> network_in
+network_out -[#orange]-> handler_out
+
+@enduml

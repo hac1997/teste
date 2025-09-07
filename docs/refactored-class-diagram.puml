@@ -1,0 +1,269 @@
+@startuml RefactoredClassDiagram
+!theme plain
+title Refactored Class Diagram - Morelli Game (After Circular Dependencies Resolution)
+
+package "ifsc.melhorelli" {
+    package "controller" {
+        class AtorJogador {
+            - networkService: NetworkService
+            - tabuleiroService: TabuleiroService
+            - tela: TelaJogador
+            - conectado: boolean
+            - jogador: Jogador
+            - daVez: boolean
+            - tabuleiroAtualizado: Faixa[]
+            
+            + AtorJogador()
+            + setJogador(jogador: Jogador): void
+            + setDaVez(vez: boolean): void
+            + conectar(): void
+            + desconectar(): void
+            + iniciarPartida(): void
+            + movimentarPeca(origem: Posicao, destino: Posicao): void
+            + enviarJogada(tipoJogada: TipoJogada): void
+            + abandonarPartida(): void
+            + realizarAcordo(): void
+            + ajuda(): String
+            + notificar(msg: String): void
+            
+            ' GameEventHandler methods
+            + receberSolicitacaoInicio(ordem: int): void
+            + receberJogada(jogada: JogadaMorelli): void
+            + finalizarPartidaEmpate(): void
+            + informaPartidaEncerrada(): void
+        }
+    }
+    
+    package "service" {
+        interface GameEventHandler {
+            + receberSolicitacaoInicio(ordem: int): void
+            + receberJogada(jogada: JogadaMorelli): void
+            + finalizarPartidaEmpate(): void
+            + informaPartidaEncerrada(): void
+            + notificar(msg: String): void
+        }
+        
+        class TabuleiroService {
+            - ajuda: Ajuda
+            - random: Random
+            - partidaEmAndamento: boolean
+            - faixasTabuleiro: Faixa[]
+            - trono: Faixa
+            - jogador1: Jogador
+            - jogador2: Jogador
+            
+            + TabuleiroService()
+            + setPartidaEmAndamento(partidaEmAndamento: boolean): void
+            + isPartidaEmAndamento(): boolean
+            + iniciarPartida(ordem: int, nomeJogador1: String, nomeJogador2: String): Faixa[]
+            + calcularMovimento(origem: Posicao, destino: Posicao): boolean
+            + calcularCaptura(destino: Posicao): void
+            + calcularTomadaTrono(posicao: Posicao): void
+            + limparTabuleiro(): void
+            + distribuiPecas(): void
+            + moverPeca(origem: Posicao, destino: Posicao): void
+            + getAjuda(): String
+            + atualizarTabuleiro(tabuleiro: Faixa[]): void
+            + getFaixasTabuleiro(): Faixa[]
+            + finalizaPartida(): void
+            - movimentoAoCentro(origem: Posicao, destino: Posicao): boolean
+            - calcularMovimentoLinha(origem: Posicao, destino: Posicao): boolean
+            - calcularMovimentoColuna(origem: Posicao, destino: Posicao): boolean
+            - calcularMovimentoDiagonal(origem: Posicao, destino: Posicao): boolean
+            - verificarAdjacentes(destino: Posicao): Posicao[]
+            - buscarOposta(inimigo: Posicao, destino: Posicao): Posicao
+            - buscarPosicao(faixa: Faixa, linha: int, coluna: int): Posicao
+            - encontrarIndice(posicoes: Posicao[], alvo: Posicao): int
+            - atualizarPosicaoTabuleiro(posicao: Posicao): void
+        }
+        
+        class NetworkService {
+            - gameEventHandler: GameEventHandler
+            - proxy: Proxy
+            
+            + NetworkService(gameEventHandler: GameEventHandler)
+            + conectar(ip: String, nomeJogador: String): boolean
+            + desconectar(): boolean
+            + iniciarPartida(): void
+            + enviarJogada(jogada: JogadaMorelli): void
+            + reiniciarPartida(): void
+            + finalizarPartida(): void
+            + getNomeJogador(): String
+            + getNomeAdversario(posicao: int): String
+            
+            ' OuvidorProxy methods
+            + iniciarNovaPartida(posicao: Integer): void
+            + receberJogada(jogada: Jogada): void
+            + finalizarPartidaComErro(msg: String): void
+            + tratarConexaoPerdida(): void
+            + tratarPartidaNaoIniciada(message: String): void
+            + receberMensagem(msg: String): void
+        }
+    }
+    
+    package "model" {
+        class Jogador {
+            - nome: String
+            - pecasPretas: boolean
+            
+            + Jogador(nome: String)
+            + setPecasPretas(): void
+            + getCor(): boolean
+        }
+        
+        class Posicao {
+            - faixa: int
+            - linha: int
+            - coluna: int
+            + ocupada: boolean
+            + preta: boolean
+            
+            + Posicao(faixa: int, linha: int, coluna: int)
+            + getFaixa(): int
+            + getLinha(): int
+            + getColuna(): int
+            + retirarPeca(): void
+            + posicionarPeca(corPeca: boolean): void
+            + isOcupada(): boolean
+            + setCor(corPeca: boolean): void
+            + getCor(): boolean
+            + equals(posicao: Posicao): boolean
+        }
+        
+        class Faixa {
+            - ordem: int
+            - cor: Cor
+            + posicoes: Posicao[]
+            
+            + Faixa(ordem: int)
+            + getPosicoes(): Posicao[]
+            + addPosicao(indice: int, ordem: int, linha: int, coluna: int): void
+            + preencherFaixa(ordem: int): void
+        }
+        
+        class JogadaMorelli {
+            - tabuleiro: Faixa[]
+            - tipoJogada: TipoJogada
+            
+            + JogadaMorelli(tipoJogada: TipoJogada, tabuleiro: Faixa[])
+            + JogadaMorelli(tipoJogada: TipoJogada)
+            + getTabuleiro(): Faixa[]
+            + getTipoDeJogada(): TipoJogada
+        }
+        
+        class Ajuda {
+            - textoAjuda: String[]
+            
+            + Ajuda()
+            + getTextoAjuda(): String
+        }
+        
+        enum Cor {
+            ROXO
+            AZULESCURO
+            AZULCLARO
+            VERDE
+            AMARELO
+            LARANJA
+            VERMELHO
+        }
+        
+        enum TipoJogada {
+            ABANDONARPARTIDA
+            ACORDOACEITO
+            ACORDONEGADO
+            ATUALIZARTABULEIRO
+            ENCERRAMENTO
+            REALIZARACORDO
+        }
+    }
+    
+    package "view" {
+        class TelaJogador {
+            + TelaJogador(atorJogador: AtorJogador)
+            + setPainel(texto: String): void
+            + atualizaTabuleiro(tabuleiro: Faixa[]): void
+            + setVisible(visible: boolean): void
+        }
+    }
+}
+
+package "br.ufsc.inf.leobr.cliente" {
+    interface Jogada
+    
+    interface ClienteReceptor {
+        + iniciarNovaPartida(posicao: Integer): void
+        + recebaJogada(jogadaMarshalled: MarshalledObject): void
+        + finalizarPartidaComErro(message: String): void
+        + tratarPerdaConexao(): void
+        + tratarPartidaNaoInciada(message: String): void
+    }
+    
+    interface OuvidorProxy {
+        + iniciarNovaPartida(posicao: Integer): void
+        + finalizarPartidaComErro(message: String): void
+        + receberMensagem(msg: String): void
+        + receberJogada(jogada: Jogada): void
+        + tratarConexaoPerdida(): void
+        + tratarPartidaNaoIniciada(message: String): void
+    }
+    
+    class Proxy {
+        - {static} instance: Proxy
+        - nomeJogador: String
+        - {static} idJogo: Long
+        - ouvintes: List<OuvidorProxy>
+        - estadoProxy: EstadoProxy
+        
+        + {static} getInstance(): Proxy
+        + addOuvinte(ouvinte: OuvidorProxy): void
+        + conectar(ipServidor: String, nome: String): void
+        + desconectar(): void
+        + iniciarPartida(qtdeJogadoresNaPartida: Integer): void
+        + enviaJogada(jogada: Jogada): void
+        + obterNomeAdversario(posicao: Integer): String
+    }
+}
+
+' Relationships - NEW ARCHITECTURE (No Circular Dependencies)
+AtorJogador ..|> GameEventHandler : implements
+AtorJogador --> NetworkService : uses
+AtorJogador --> TabuleiroService : uses
+AtorJogador --> TelaJogador : uses
+AtorJogador --> Jogador : manages
+
+NetworkService --> GameEventHandler : depends on
+NetworkService ..|> OuvidorProxy : implements
+NetworkService --> Proxy : uses
+
+TabuleiroService --> Ajuda : uses
+TabuleiroService --> Faixa : manages
+TabuleiroService --> Jogador : manages
+
+Faixa --> Posicao : contains
+Faixa --> Cor : uses
+
+JogadaMorelli --> TipoJogada : uses
+JogadaMorelli --> Faixa : contains
+JogadaMorelli ..|> Jogada : implements
+
+Posicao ..|> Jogada : implements
+
+note top of AtorJogador : "Controller layer\nImplements GameEventHandler\nCoordinates between services"
+
+note top of TabuleiroService : "Service layer\nPure game logic\nNo UI dependencies"
+
+note top of NetworkService : "Service layer\nNetwork communication\nUses GameEventHandler interface"
+
+note top of GameEventHandler : "Interface for breaking\ncircular dependencies\nEnables dependency inversion"
+
+note as N1
+**Key Improvements:**
+• No circular dependencies
+• Clear separation of concerns
+• Dependency inversion principle
+• Single responsibility principle
+• Improved testability
+end note
+
+@enduml
