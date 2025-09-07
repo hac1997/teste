@@ -82,13 +82,12 @@ public class AtorJogador implements GameEventHandler {
         if (this.tabuleiroService.isPartidaEmAndamento()) {
             this.notificarPartidaEmAndamento();
             if (this.confirmarReiniciarPartida()) {
-                this.networkService.reiniciarPartida();
+                this.tabuleiroService.setPartidaEmAndamento(false);
+                this.networkService.iniciarPartida();
             }
         } else {
-            this.tabuleiroService.setPartidaEmAndamento(true);
             this.networkService.iniciarPartida();
         }
-
     }
 
     @Override
@@ -97,13 +96,13 @@ public class AtorJogador implements GameEventHandler {
             this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(1) + "\n");
             this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(2) + "\n\n");
             this.tela.setPainel("Você joga com as peças brancas.\n");
-            this.tela.setPainel("Seu adversário começa jogando. Aguarde a sua vez!");
+            this.tela.setPainel("Você começa jogando.");
             this.setDaVez(true);
         } else {
             this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(2) + "\n");
             this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(1) + "\n\n");
             this.tela.setPainel("Você joga com as peças pretas.\n");
-            this.tela.setPainel("Você começa jogando.");
+            this.tela.setPainel("Seu adversário começa jogando. Aguarde a sua vez!");
             this.setDaVez(false);
         }
 
