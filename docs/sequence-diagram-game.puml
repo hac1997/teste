@@ -1,0 +1,55 @@
+@startuml SequenceGame
+!theme plain
+title Sequence Diagram - Game Flow
+
+participant Player1
+participant AtorJogador1
+participant NetGames1
+participant Proxy1
+participant Server
+participant Proxy2
+participant NetGames2
+participant AtorJogador2
+participant Player2
+
+Player1 -> AtorJogador1: iniciarPartida()
+AtorJogador1 -> NetGames1: iniciarPartida()
+NetGames1 -> Proxy1: iniciarPartida(2)
+Proxy1 -> Server: iniciarPartida(2)
+Server -> Jogo: iniciarPartida(jogador1, 2)
+Jogo -> Partida: create new partida
+Partida -> ServerHandler1: iniciarNovaPartida(1)
+Partida -> ServerHandler2: iniciarNovaPartida(2)
+
+ServerHandler1 -> Proxy1: iniciarNovaPartida(1)
+Proxy1 -> NetGames1: iniciarNovaPartida(1)
+NetGames1 -> AtorJogador1: receberSolicitacaoInicio(1)
+AtorJogador1 -> Tabuleiro: iniciarPartida(1, nome1, nome2)
+AtorJogador1 -> AtorJogador1: enviarJogada(ATUALIZARTABULEIRO)
+
+ServerHandler2 -> Proxy2: iniciarNovaPartida(2)
+Proxy2 -> NetGames2: iniciarNovaPartida(2)
+NetGames2 -> AtorJogador2: receberSolicitacaoInicio(2)
+AtorJogador2 -> Tabuleiro: iniciarPartida(2, nome1, nome2)
+
+note over Player1, Player2: Game starts, Player1 has white pieces and goes first
+
+Player1 -> AtorJogador1: movimentarPeca(origem, destino)
+AtorJogador1 -> Tabuleiro: calcularMovimento(origem, destino)
+Tabuleiro -> Tabuleiro: calcularCaptura(destino)
+Tabuleiro -> Tabuleiro: calcularTomadaTrono(destino)
+AtorJogador1 -> AtorJogador1: enviarJogada(ATUALIZARTABULEIRO)
+AtorJogador1 -> NetGames1: enviarJogada(jogada)
+NetGames1 -> Proxy1: enviaJogada(jogada)
+Proxy1 -> Server: enviaJogada(jogada)
+Server -> Partida: efetuaJogada(jogador1, jogada)
+Partida -> ServerHandler2: recebeJogada(jogada)
+ServerHandler2 -> Proxy2: recebeJogada(jogada)
+Proxy2 -> NetGames2: receberJogada(jogada)
+NetGames2 -> AtorJogador2: receberJogada(jogada)
+AtorJogador2 -> AtorJogador2: atualizaTabuleiro(tabuleiro)
+AtorJogador2 -> Tabuleiro: atualizarTabuleiro(tabuleiro)
+
+note over Player1, Player2: Now it's Player2's turn
+
+@enduml

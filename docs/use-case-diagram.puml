@@ -1,0 +1,61 @@
+@startuml UseCaseDiagram
+!theme plain
+title Use Case Diagram - Morelli Game
+
+left to right direction
+
+actor "Player" as player
+actor "Server" as server
+
+rectangle "Morelli Game System" {
+    usecase "Connect to Server" as UC1
+    usecase "Disconnect from Server" as UC2
+    usecase "Start Match" as UC3
+    usecase "Move Piece" as UC4
+    usecase "Capture Pieces" as UC5
+    usecase "Conquer Throne" as UC6
+    usecase "Make Deal" as UC7
+    usecase "Accept Deal" as UC8
+    usecase "Reject Deal" as UC9
+    usecase "Abandon Match" as UC10
+    usecase "Restart Match" as UC11
+    usecase "View Help" as UC12
+    usecase "Receive Move" as UC13
+    usecase "Update Board" as UC14
+    usecase "Manage Game Sessions" as UC15
+    usecase "Handle Player Connections" as UC16
+    usecase "Validate Moves" as UC17
+    usecase "Broadcast Game State" as UC18
+}
+
+player --> UC1
+player --> UC2
+player --> UC3
+player --> UC4
+player --> UC7
+player --> UC8
+player --> UC9
+player --> UC10
+player --> UC11
+player --> UC12
+
+UC4 .> UC5 : <<includes>>
+UC4 .> UC6 : <<includes>>
+UC4 .> UC13 : <<includes>>
+UC4 .> UC14 : <<includes>>
+
+UC3 .> UC1 : <<requires>>
+UC4 .> UC3 : <<requires>>
+UC7 .> UC3 : <<requires>>
+UC10 .> UC3 : <<requires>>
+UC11 .> UC3 : <<requires>>
+
+server --> UC15
+server --> UC16
+server --> UC17
+server --> UC18
+
+UC15 .> UC16 : <<includes>>
+UC17 .> UC18 : <<includes>>
+
+@enduml

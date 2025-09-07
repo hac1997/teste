@@ -1,0 +1,37 @@
+@startuml StateDiagram
+!theme plain
+title State Diagram - Proxy States
+
+[*] --> ProxyDesconectadoEstado : create proxy
+
+state ProxyDesconectadoEstado {
+    ProxyDesconectadoEstado : conectar() - connects to server
+    ProxyDesconectadoEstado : desconectar() - throws NaoConectadoException
+    ProxyDesconectadoEstado : iniciarPartida() - throws NaoConectadoException
+    ProxyDesconectadoEstado : enviaJogada() - throws NaoJogandoException
+}
+
+state ProxyConectadoEstado {
+    ProxyConectadoEstado : conectar() - throws JahConectadoException
+    ProxyConectadoEstado : desconectar() - disconnects from server
+    ProxyConectadoEstado : iniciarPartida() - starts new match
+    ProxyConectadoEstado : enviaJogada() - throws NaoJogandoException
+}
+
+state ProxyJogandoEstado {
+    ProxyJogandoEstado : conectar() - throws JahConectadoException
+    ProxyJogandoEstado : desconectar() - disconnects from server
+    ProxyJogandoEstado : iniciarPartida() - starts new match
+    ProxyJogandoEstado : enviaJogada() - sends move to server
+    ProxyJogandoEstado : reiniciarPartida() - restarts current match
+    ProxyJogandoEstado : finalizarPartida() - ends current match
+}
+
+ProxyDesconectadoEstado --> ProxyConectadoEstado : conectar() / successful connection
+ProxyConectadoEstado --> ProxyDesconectadoEstado : desconectar() / disconnect
+ProxyConectadoEstado --> ProxyJogandoEstado : iniciarNovaPartida() / match started
+ProxyJogandoEstado --> ProxyConectadoEstado : finalizarPartidaComErro() / match ended with error
+ProxyJogandoEstado --> ProxyDesconectadoEstado : tratarPerdaConexao() / connection lost
+ProxyJogandoEstado --> ProxyDesconectadoEstado : desconectar() / disconnect
+
+@enduml

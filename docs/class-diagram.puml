@@ -1,0 +1,354 @@
+@startuml ClassDiagram
+!theme plain
+
+package "ifsc.melhorelli" {
+    package "controller" {
+        class AtorJogador {
+            - netGames: NetGames
+            - tabuleiro: Tabuleiro
+            - tela: TelaJogador
+            - conectado: boolean
+            - jogador: Jogador
+            - daVez: boolean
+            - tabuleiroAtualizado: Faixa[]
+            
+            + AtorJogador()
+            + setJogador(jogador: Jogador): void
+            + setDaVez(vez: boolean): void
+            + conectar(): void
+            + desconectar(): void
+            + iniciarPartida(): void
+            + receberSolicitacaoInicio(ordem: int): void
+            + movimentarPeca(origem: Posicao, destino: Posicao): void
+            + enviarJogada(tipoJogada: TipoJogada): void
+            + receberJogada(jogada: JogadaMorelli): void
+            + abandonarPartida(): void
+            + realizarAcordo(): void
+            + ajuda(): String
+            + notificar(msg: String): void
+        }
+    }
+    
+    package "model" {
+        class Jogador {
+            - nome: String
+            - pecasPretas: boolean
+            
+            + Jogador(nome: String)
+            + setPecasPretas(): void
+            + getCor(): boolean
+        }
+        
+        class Posicao {
+            - faixa: int
+            - linha: int
+            - coluna: int
+            + ocupada: boolean
+            + preta: boolean
+            
+            + Posicao(faixa: int, linha: int, coluna: int)
+            + getFaixa(): int
+            + getLinha(): int
+            + getColuna(): int
+            + retirarPeca(): void
+            + posicionarPeca(corPeca: boolean): void
+            + isOcupada(): boolean
+            + setCor(corPeca: boolean): void
+            + getCor(): boolean
+            + equals(posicao: Posicao): boolean
+        }
+        
+        class Faixa {
+            - ordem: int
+            - cor: Cor
+            + posicoes: Posicao[]
+            
+            + Faixa(ordem: int)
+            + getPosicoes(): Posicao[]
+            + addPosicao(indice: int, ordem: int, linha: int, coluna: int): void
+            + preencherFaixa(ordem: int): void
+        }
+        
+        class JogadaMorelli {
+            - tabuleiro: Faixa[]
+            - tipoJogada: TipoJogada
+            
+            + JogadaMorelli(tipoJogada: TipoJogada, tabuleiro: Faixa[])
+            + JogadaMorelli(tipoJogada: TipoJogada)
+            + getTabuleiro(): Faixa[]
+            + getTipoDeJogada(): TipoJogada
+        }
+        
+        class Ajuda {
+            - textoAjuda: String[]
+            
+            + Ajuda()
+            + getTextoAjuda(): String
+        }
+        
+        enum Cor {
+            ROXO
+            AZULESCURO
+            AZULCLARO
+            VERDE
+            AMARELO
+            LARANJA
+            VERMELHO
+        }
+        
+        enum TipoJogada {
+            ABANDONARPARTIDA
+            ACORDOACEITO
+            ACORDONEGADO
+            ATUALIZARTABULEIRO
+            ENCERRAMENTO
+            REALIZARACORDO
+        }
+    }
+    
+    package "service" {
+        class Tabuleiro {
+            - atorJogador: AtorJogador
+            - ajuda: Ajuda
+            - random: Random
+            - partidaEmAndamento: boolean
+            - faixasTabuleiro: Faixa[]
+            - trono: Faixa
+            - jogador1: Jogador
+            - jogador2: Jogador
+            
+            + Tabuleiro(atorJogador: AtorJogador)
+            + setPartidaEmAndamento(partidaEmAndamento: boolean): void
+            + isPartidaEmAndamento(): boolean
+            + iniciarPartida(ordem: int, nomeJogador1: String, nomeJogador2: String): Faixa[]
+            + calcularMovimento(origem: Posicao, destino: Posicao): boolean
+            + calcularCaptura(destino: Posicao): void
+            + calcularTomadaTrono(posicao: Posicao): void
+            + limparTabuleiro(): void
+            + distribuiPecas(): void
+            + moverPeca(origem: Posicao, destino: Posicao): void
+            + getAjuda(): String
+        }
+    }
+    
+    package "proxy" {
+        class NetGames {
+            - atorJogador: AtorJogador
+            - proxy: Proxy
+            
+            + NetGames(atorJogador: AtorJogador)
+            + conectar(ip: String, nomeJogador: String): boolean
+            + desconectar(): boolean
+            + iniciarPartida(): void
+            + enviarJogada(jogada: JogadaMorelli): void
+            + reiniciarPartida(): void
+            + finalizarPartida(): void
+            + getNomeJogador(): String
+            + getNomeAdversario(posicao: int): String
+        }
+    }
+    
+    package "view" {
+        class TelaJogador {
+            + TelaJogador(atorJogador: AtorJogador)
+            + setPainel(texto: String): void
+            + atualizaTabuleiro(tabuleiro: Faixa[]): void
+            + setVisible(visible: boolean): void
+        }
+    }
+}
+
+package "br.ufsc.inf.leobr.cliente" {
+    interface Jogada
+    
+    interface ClienteReceptor {
+        + iniciarNovaPartida(posicao: Integer): void
+        + recebaJogada(jogadaMarshalled: MarshalledObject): void
+        + finalizarPartidaComErro(message: String): void
+        + tratarPerdaConexao(): void
+        + tratarPartidaNaoInciada(message: String): void
+    }
+    
+    interface OuvidorProxy {
+        + iniciarNovaPartida(posicao: Integer): void
+        + finalizarPartidaComErro(message: String): void
+        + receberMensagem(msg: String): void
+        + receberJogada(jogada: Jogada): void
+        + tratarConexaoPerdida(): void
+        + tratarPartidaNaoIniciada(message: String): void
+    }
+    
+    class Cliente {
+        - dualRpcClient: DualRpcClient
+        - serverHost: String
+        - serverPort: int
+        + serverSessionId: long
+        + clientSessionId: long
+        
+        + connect(clienteReceptor: ClienteReceptor, idJogo: Long, ipServidor: String, nomeJogador: String): void
+        + iniciarPartida(qtdeJogadoresNaPartida: Integer): void
+        + enviaJogada(jogada: Jogada): void
+        + reiniciarPartida(): void
+        + desconectar(): void
+        + finalizarPartida(): void
+        + obterNomeJogadores(): List<String>
+    }
+    
+    class Proxy {
+        - {static} instance: Proxy
+        - nomeJogador: String
+        - {static} idJogo: Long
+        - ouvintes: List<OuvidorProxy>
+        - estadoProxy: EstadoProxy
+        - estadoConectado: EstadoProxy
+        - estadoDesconectado: EstadoProxy
+        - estadoJogando: EstadoProxy
+        
+        + {static} getInstance(): Proxy
+        + addOuvinte(ouvinte: OuvidorProxy): void
+        + conectar(ipServidor: String, nome: String): void
+        + desconectar(): void
+        + iniciarPartida(qtdeJogadoresNaPartida: Integer): void
+        + enviaJogada(jogada: Jogada): void
+        + recebaJogada(jogadaMarshalled: MarshalledObject): void
+        + obterNomeAdversarios(): List<String>
+    }
+    
+    abstract class EstadoProxy {
+        # cliente: Cliente
+        
+        + {abstract} conectar(ipServidor: String, nome: String): void
+        + {abstract} desconectar(): void
+        + {abstract} enviaJogada(jogada: Jogada): void
+        + {abstract} iniciarPartida(qtdeJogadoresNaPartida: Integer): void
+        + {abstract} reiniciarPartida(): void
+        + {abstract} finalizarPartida(): void
+        + obterNomeAdversarios(): List<String>
+        + obterNomeAdversario(posicao: Integer): String
+    }
+    
+    class ProxyConectadoEstado extends EstadoProxy
+    class ProxyDesconectadoEstado extends EstadoProxy
+    class ProxyJogandoEstado extends EstadoProxy
+    
+    class ClienteTratador {
+        - cliente: ClienteReceptor
+        
+        + ClienteTratador(cliente: ClienteReceptor)
+        + recebeJogada(jogadaMarshalled: MarshalledObject): void
+        + iniciarNovaPartida(posicao: Integer): void
+        + finalizarPartidaComErro(message: String): void
+        + tratarPartidaNaoInciada(message: String): void
+    }
+    
+    class DadosAplicacao {
+        + serverSessionId: Long
+    }
+}
+
+package "br.ufsc.inf.leobr.servidor" {
+    class Server {
+        - dualRpcServer: DualRpcServer
+        - serverHost: String
+        - serverPort: int
+        - jogos: Map<Long, Jogo>
+        
+        + listen(): void
+        + cadastrarNoJogo(jogador: ServerHandler, idJogo: Long): Jogo
+        + removerJogo(jogo: Jogo): void
+    }
+    
+    class ServerHandler {
+        + server: Server
+        + serverSessionId: long
+        + clientSessionId: long
+        + jogo: Jogo
+        + partida: Partida
+        + nomeJogador: String
+        - estahConectado: boolean
+        
+        + estabelecerSessao(clientSessionId: Long, idJogo: Long, nomeJogador: String): DadosAplicacao
+        + enviaJogada(jogada: MarshalledObject): void
+        + iniciarPartida(qtdeJogadoresNaPartida: Integer): void
+        + finalizarPartida(): void
+        + reiniciarPartida(): void
+        + desconectar(): void
+        + obterNomeJogadores(): List<String>
+        + estahJogando(): boolean
+        + estahConectado(): boolean
+    }
+    
+    class Jogo {
+        - idJogo: Long
+        - partidas: List<Partida>
+        - ultimaPartida: long
+        - jogadores: List<ServerHandler>
+        
+        + Jogo(idJogo: Long)
+        + incluirJogador(serverHandler: ServerHandler): void
+        + iniciarPartida(jogadorPedinte: ServerHandler, quantidadeJogadores: Integer): void
+        + removerJogador(jogador: ServerHandler): void
+        + encerrarPartida(partida: Partida): void
+        + estahFinalizado(): boolean
+        + obterNomeJogadores(): List<String>
+    }
+    
+    class Partida {
+        - jogo: Jogo
+        - jogadores: List<ServerHandler>
+        - jogadorDono: ServerHandler
+        - idPartida: long
+        
+        + Partida(idPartida: long, jogo: Jogo, jogadores: List<ServerHandler>)
+        + iniciaPartida(jogadorPedinte: ServerHandler): void
+        + efetuaJogada(jogadorEfetuante: ServerHandler, jogada: MarshalledObject): void
+        + encerrarPartida(): void
+        + reiniciar(jogadorPedinte: ServerHandler): void
+        + obterNomeJogadores(): List<String>
+    }
+}
+
+' Relationships
+AtorJogador --> NetGames
+AtorJogador --> Tabuleiro
+AtorJogador --> TelaJogador
+AtorJogador --> Jogador
+
+Tabuleiro --> AtorJogador
+Tabuleiro --> Ajuda
+Tabuleiro --> Faixa
+Tabuleiro --> Jogador
+
+NetGames --> AtorJogador
+NetGames --> Proxy
+NetGames ..|> OuvidorProxy
+
+Faixa --> Posicao
+Faixa --> Cor
+
+JogadaMorelli --> TipoJogada
+JogadaMorelli --> Faixa
+JogadaMorelli ..|> Jogada
+
+Posicao ..|> Jogada
+
+Proxy --> EstadoProxy
+Proxy --> OuvidorProxy
+Proxy ..|> ClienteReceptor
+
+EstadoProxy --> Cliente
+
+ClienteTratador --> ClienteReceptor
+
+Server --> Jogo
+ServerHandler --> Server
+ServerHandler --> Jogo
+ServerHandler --> Partida
+
+Jogo --> Partida
+Jogo --> ServerHandler
+
+Partida --> Jogo
+Partida --> ServerHandler
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml ComponentDiagram
+!theme plain
+title Component Diagram - Morelli Game Architecture
+
+package "Client Side" {
+    component [View Layer] {
+        [TelaJogador]
+    }
+    
+    component [Controller Layer] {
+        [AtorJogador]
+    }
+    
+    component [Model Layer] {
+        [Jogador]
+        [Posicao]
+        [Faixa]
+        [JogadaMorelli]
+        [Ajuda]
+        [Cor]
+        [TipoJogada]
+    }
+    
+    component [Service Layer] {
+        [Tabuleiro]
+    }
+    
+    component [Proxy Layer] {
+        [NetGames]
+    }
+    
+    component [Network Framework] {
+        [Proxy]
+        [Cliente]
+        [EstadoProxy]
+        [ClienteTratador]
+    }
+}
+
+package "Server Side" {
+    component [Server Framework] {
+        [Server]
+        [ServerHandler]
+    }
+    
+    component [Game Logic] {
+        [Jogo]
+        [Partida]
+    }
+}
+
+cloud "Network" {
+    [TCP/IP Connection]
+}
+
+[TelaJogador] --> [AtorJogador] : user interactions
+[AtorJogador] --> [Tabuleiro] : game logic
+[AtorJogador] --> [NetGames] : network operations
+[AtorJogador] --> [Model Layer] : data access
+
+[Tabuleiro] --> [Model Layer] : game state
+[NetGames] --> [Proxy] : network proxy
+
+[Proxy] --> [Cliente] : client connection
+[Cliente] --> [TCP/IP Connection] : network communication
+[TCP/IP Connection] --> [Server] : server connection
+[Server] --> [ServerHandler] : client handling
+[ServerHandler] --> [Game Logic] : game management
+
+interface "Jogada" as IJogada
+interface "ClienteReceptor" as IClienteReceptor
+interface "OuvidorProxy" as IOuvidorProxy
+
+[Model Layer] ..> IJogada : implements
+[Proxy] ..> IClienteReceptor : implements
+[NetGames] ..> IOuvidorProxy : implements
+
+@enduml

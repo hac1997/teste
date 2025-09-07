@@ -1,0 +1,75 @@
+@startuml PackageDiagram
+!theme plain
+title Package Diagram - Morelli Game Project Structure
+
+package "ifsc.melhorelli" {
+    package "controller" {
+        class AtorJogador
+    }
+    
+    package "model" {
+        class Jogador
+        class Posicao
+        class Faixa
+        class JogadaMorelli
+        class Ajuda
+        enum Cor
+        enum TipoJogada
+    }
+    
+    package "service" {
+        class Tabuleiro
+    }
+    
+    package "proxy" {
+        class NetGames
+    }
+    
+    package "view" {
+        class TelaJogador
+    }
+}
+
+package "br.ufsc.inf.leobr.cliente" {
+    interface Jogada
+    interface ClienteReceptor
+    interface OuvidorProxy
+    class Cliente
+    class Proxy
+    abstract EstadoProxy
+    class ProxyConectadoEstado
+    class ProxyDesconectadoEstado
+    class ProxyJogandoEstado
+    class ClienteTratador
+    class DadosAplicacao
+}
+
+package "br.ufsc.inf.leobr.servidor" {
+    class Server
+    class ServerHandler
+    class Jogo
+    class Partida
+}
+
+package "br.ufsc.inf.leobr.file" {
+    class CifraUtil
+    class Gerador
+}
+
+' Dependencies
+controller ..> model : uses
+controller ..> service : uses
+controller ..> proxy : uses
+controller ..> view : uses
+
+service ..> model : uses
+service ..> controller : uses
+
+proxy ..> controller : uses
+proxy ..> br.ufsc.inf.leobr.cliente : uses
+
+model ..> br.ufsc.inf.leobr.cliente : implements
+
+br.ufsc.inf.leobr.cliente ..> br.ufsc.inf.leobr.servidor : communicates
+
+@enduml

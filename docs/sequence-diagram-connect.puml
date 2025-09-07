@@ -1,0 +1,34 @@
+@startuml SequenceConnect
+!theme plain
+title Sequence Diagram - Player Connection
+
+actor Player
+participant TelaJogador
+participant AtorJogador
+participant NetGames
+participant Proxy
+participant Cliente
+participant Server
+participant ServerHandler
+
+Player -> TelaJogador: click connect
+TelaJogador -> AtorJogador: conectar()
+AtorJogador -> AtorJogador: solicitaIpServidor()
+AtorJogador -> AtorJogador: solicitaNomeJogador()
+AtorJogador -> NetGames: conectar(ip, nomeJogador)
+NetGames -> Proxy: conectar(ip, nomeJogador)
+Proxy -> EstadoProxy: conectar(ip, nomeJogador)
+EstadoProxy -> Cliente: connect(proxy, idJogo, ip, nomeJogador)
+Cliente -> Server: establish connection
+Server -> ServerHandler: create new handler
+ServerHandler -> Server: cadastrarNoJogo(this, idJogo)
+Server -> Jogo: incluirJogador(serverHandler)
+ServerHandler --> Cliente: DadosAplicacao
+Cliente --> EstadoProxy: connection established
+EstadoProxy --> Proxy: state changed to connected
+Proxy --> NetGames: true
+NetGames --> AtorJogador: true
+AtorJogador -> AtorJogador: informarEstadoConexao()
+AtorJogador -> TelaJogador: setPainel("Conectado")
+
+@enduml
