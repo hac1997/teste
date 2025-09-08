@@ -1,0 +1,104 @@
+@startuml LayersDiagram
+!theme plain
+title Diagrama de Camadas - Arquitetura do Projeto Morelli
+
+!define LAYER_COLOR_1 #E8F4FD
+!define LAYER_COLOR_2 #D1E7DD
+!define LAYER_COLOR_3 #FFF3CD
+!define LAYER_COLOR_4 #F8D7DA
+!define LAYER_COLOR_5 #E2E3E5
+
+package "Camada de Apresentação" LAYER_COLOR_1 {
+    component [TelaJogador] as UI {
+        interface "User Interface" as UI_Interface
+        note bottom : Interface gráfica\nInteração com usuário\nExibição do tabuleiro
+    }
+}
+
+package "Camada de Controle" LAYER_COLOR_2 {
+    component [AtorJogador] as Controller {
+        interface "GameEventHandler" as EventHandler
+        note bottom : Coordenação geral\nGerenciamento de estado\nTratamento de eventos
+    }
+}
+
+package "Camada de Serviços" LAYER_COLOR_3 {
+    component [TabuleiroService] as GameService {
+        interface "Game Logic" as GameLogic
+        note bottom : Lógica do jogo\nRegras do Morelli\nMovimentação de peças
+    }
+    
+    component [NetworkService] as NetService {
+        interface "Network Communication" as NetworkComm
+        note bottom : Comunicação de rede\nGerenciamento de conexão\nTroca de mensagens
+    }
+}
+
+package "Camada de Modelo" LAYER_COLOR_4 {
+    component [Entidades do Domínio] as Domain {
+        [Jogador]
+        [Posicao]
+        [Faixa]
+        [JogadaMorelli]
+        [Ajuda]
+        note bottom : Entidades de negócio\nRegras de domínio\nEstado do jogo
+    }
+    
+    component [Enumerações] as Enums {
+        [Cor]
+        [TipoJogada]
+        note bottom : Valores constantes\nTipos de dados\nEstados válidos
+    }
+}
+
+package "Camada de Framework" LAYER_COLOR_5 {
+    component [Framework de Rede] as Framework {
+        [Proxy]
+        [Cliente]
+        [EstadoProxy]
+        [OuvidorProxy]
+        note bottom : Infraestrutura de rede\nGerenciamento de conexões\nComunicação cliente-servidor
+    }
+}
+
+' Dependências entre camadas (fluxo descendente)
+UI_Interface --> EventHandler : user actions
+EventHandler --> GameLogic : game operations
+EventHandler --> NetworkComm : network operations
+GameLogic --> Domain : uses entities
+NetworkComm --> Domain : transfers data
+NetworkComm --> Framework : network infrastructure
+
+' Anotações sobre o fluxo
+note as FlowNote
+**Fluxo de Dependências (Clean Architecture):**
+Apresentação → Controle → Serviços → Modelo → Framework
+
+**Regras:**
+• Dependências sempre "para baixo"
+• Camadas superiores não conhecem detalhes das inferiores
+• Interfaces quebram dependências circulares
+• Cada camada tem responsabilidade única
+end note
+
+' Legenda de cores
+legend right
+    |<LAYER_COLOR_1>| Apresentação | Interface do usuário |
+    |<LAYER_COLOR_2>| Controle | Coordenação e eventos |
+    |<LAYER_COLOR_3>| Serviços | Lógica de negócio |
+    |<LAYER_COLOR_4>| Modelo | Entidades de domínio |
+    |<LAYER_COLOR_5>| Framework | Infraestrutura |
+endlegend
+
+' Benefícios da arquitetura
+note as Benefits
+**Benefícios da Arquitetura em Camadas:**
+✅ Separação clara de responsabilidades
+✅ Facilita testes unitários
+✅ Manutenibilidade melhorada
+✅ Reutilização de código
+✅ Baixo acoplamento entre camadas
+✅ Alta coesão dentro das camadas
+end note
+
+@enduml
