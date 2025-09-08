@@ -243,10 +243,10 @@ public class AtorJogador implements GameEventHandler {
     public void abandonarPartida() {
         if (this.tabuleiroService.isPartidaEmAndamento()) {
             this.tabuleiroService.setPartidaEmAndamento(false);
+            this.jogador = null; // Reset do jogador ao abandonar
             this.enviarJogada(TipoJogada.ABANDONARPARTIDA);
             JOptionPane.showMessageDialog(this.tela, "Você abandonou a partida e perdeu!");
         }
-
     }
 
     public void atualizaTabuleiro(Faixa[] tabuleiroAtualizado) {
