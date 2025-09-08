@@ -92,28 +92,39 @@ public class AtorJogador implements GameEventHandler {
 
     @Override
     public void receberSolicitacaoInicio(int ordem) {
+        // Inicializar o jogador baseado na ordem recebida
+        String nomeJogador1 = this.networkService.getNomeAdversario(1);
+        String nomeJogador2 = this.networkService.getNomeAdversario(2);
+        
+        // Criar o jogador atual baseado na ordem
         if (ordem == 1) {
-            this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(1) + "\n");
-            this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(2) + "\n\n");
+            this.jogador = new Jogador(nomeJogador1);
+            // Jogador 1 joga com peças brancas (false)
+        } else {
+            this.jogador = new Jogador(nomeJogador2);
+            // Jogador 2 joga com peças pretas (true)
+            this.jogador.setPecasPretas();
+        }
+        
+        if (ordem == 1) {
+            this.tela.setPainel("Nome: " + nomeJogador1 + "\n");
+            this.tela.setPainel("Adversario: " + nomeJogador2 + "\n\n");
             this.tela.setPainel("Você joga com as peças brancas.\n");
             this.tela.setPainel("Você começa jogando.");
             this.setDaVez(true);
         } else {
-            this.tela.setPainel("Nome: " + this.networkService.getNomeAdversario(2) + "\n");
-            this.tela.setPainel("Adversario: " + this.networkService.getNomeAdversario(1) + "\n\n");
+            this.tela.setPainel("Nome: " + nomeJogador2 + "\n");
+            this.tela.setPainel("Adversario: " + nomeJogador1 + "\n\n");
             this.tela.setPainel("Você joga com as peças pretas.\n");
             this.tela.setPainel("Seu adversário começa jogando. Aguarde a sua vez!");
             this.setDaVez(false);
         }
 
-        String nomeJogador1 = this.networkService.getNomeAdversario(1);
-        String nomeJogador2 = this.networkService.getNomeAdversario(2);
         this.tabuleiroAtualizado = this.tabuleiroService.iniciarPartida(ordem, nomeJogador1, nomeJogador2);
         if (ordem == 1) {
             this.enviarJogada(TipoJogada.ATUALIZARTABULEIRO);
             this.tela.atualizaTabuleiro(this.tabuleiroAtualizado);
         }
-
     }
 
     @Override
